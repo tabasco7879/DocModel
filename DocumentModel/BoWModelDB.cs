@@ -201,5 +201,106 @@ namespace DocumentModel
             }
             writer.Close();
         }
+
+        public void TFIDFFilter()
+        {
+            Dictionary<int, TFIDF> tfidfDict = new Dictionary<int, TFIDF>();
+            foreach (DocModel m in docDB)
+            {
+                for (int i = 0; i < m.Length; i++)
+                {
+                    int wordKey = m.Word(i);
+                    TFIDF tfidf;
+                    if (!tfidfDict.TryGetValue(wordKey, out tfidf))
+                    {                        
+                        tfidf = new TFIDF(wordKey, docDB.Count);
+                        tfidf.key = wordKey;
+                        tfidfDict.Add(wordKey, tfidf);
+                    }
+                    tfidf.tf += m.Count(i);
+                    tfidf.df++;
+                }
+            }
+
+            List<KeyValuePair<int, TFIDF>> tfidfs = tfidfDict.ToList();
+            tfidfs.Sort(
+                (x1, x2) =>
+                {
+                    if (x1.Value.tfidf > x2.Value.tfidf)
+                    {
+                        return -1;
+                    }
+                    else if (x1.Value.tfidf == x2.Value.tfidf)
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return 1;
+                    }
+                });
+            // TODO: create a new dictionary and write to db
+        }
+
+        class TFIDF
+        {
+            public TFIDF(int k, int dc)
+            {
+                key = k;
+                _dc = dc;
+                _isCalc = false;
+            }
+
+            public int key
+            {
+                get;
+                set;
+            }
+
+            public int tf
+            {
+                get
+                {
+                    return _tf;
+                }
+                set
+                {
+                    _tf = value;
+                    _isCalc = false;
+                }
+            }
+
+            public int df
+            {
+                get
+                {
+                    return _df;
+                }
+                set
+                {
+                    _df = value;
+                    _isCalc = false;
+                }
+            }
+
+            public double tfidf
+            {
+                get
+                {
+                    if(!_isCalc)
+                    {
+                        _tfidf = _tf * Math.Log((double)(_dc) / _df);
+                        _isCalc = true;
+                    }
+                    return _tfidf;
+                }
+            }
+
+            private int _tf;
+            private int _df;
+            private int _dc;
+            private double _tfidf;
+            private bool _isCalc;
+        }
     }
 }

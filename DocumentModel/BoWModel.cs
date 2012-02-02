@@ -28,7 +28,7 @@ namespace DocumentModel
         int totalWordCount;
 
         public BoWModel()
-        {
+        {            
         }
 
         public string DocID
