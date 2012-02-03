@@ -78,7 +78,7 @@ namespace DocumentModel
                     if (docDB.Count % 10000 == 0)
                     {
                         Console.WriteLine("Loading {0} records", docDB.Count);
-                        break;
+                        //break;
                     }
                 }                
             }
@@ -238,8 +238,13 @@ namespace DocumentModel
                     {
                         return 1;
                     }
-                });
-            // TODO: create a new dictionary and write to db
+                });            
+            FilteredDictionary filteredDict = new FilteredDictionary();
+            for (int i = 0; i < tfidfs.Count && i < 20000; i++)
+            {
+                filteredDict.AddValue(wordDict.GetKey(tfidfs[i].Key), tfidfs[i].Key);
+            }
+            filteredDict.StoreToDB();
         }
 
         class TFIDF

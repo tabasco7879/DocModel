@@ -18,9 +18,15 @@ namespace DocumentModel
             {
                 LoadFromDB();
             }
+            // LDA
             docModelDB.Init();
             docModelDB.RunEM();
+            //docModelDB.TopBeta();
+            docModelDB.StoreLDADocModel();
+            // print class labels
             //docModelDB.Stats(classLabelDict);
+            // filter word dictionary
+            //docModelDB.TFIDFFilter();
         }
 
         static void LoadFromDB()
@@ -96,7 +102,7 @@ namespace DocumentModel
             wordDict = new WordDictionary();
             wordDict.LoadFromDB();
                         
-            docModelDB = new LDABoWModelDB(20, wordDict);
+            docModelDB = new LDABoWModelDB(200, wordDict);
             docModelDB.LoadFromDB();            
         }
 

@@ -16,7 +16,7 @@ namespace DocumentModel
 
         public abstract int Count(int idx);
 
-        public abstract int Word(int idx);        
+        public abstract int Word(int idx);                
     }
 
     // Bag of word
@@ -61,6 +61,11 @@ namespace DocumentModel
             get
             {
                 return classLabels;
+            }
+
+            set
+            {
+                classLabels = value;
             }
         }
 

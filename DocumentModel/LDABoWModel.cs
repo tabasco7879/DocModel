@@ -151,6 +151,18 @@ namespace DocumentModel
 
             return likelihood;
         }
+
+        public BoWModel GetLDADocModel()
+        {
+            BoWModel docModel = new BoWModel();
+            for (int i = 0; i < Length; i++)
+            {
+                int ldaWord = LDAUtil.argmax(phi, i);
+                docModel.AddWord(ldaWord, Count(i));
+            }
+            docModel.ClassLabels = ClassLabels;            
+            return docModel;
+        }
     }
 
     class LDABoWModelDB : BoWModelDB
@@ -316,8 +328,7 @@ namespace DocumentModel
                 
                 likelihood_old = likelihood;
                 iter++;                
-            }
-            TopBeta();
+            }            
             E_Step();
         }
 
@@ -433,5 +444,17 @@ namespace DocumentModel
             }
             sw.Close();
         }
+
+        public void StoreLDADocModel()
+        {
+            MongoCollection<BsonDocument> ldamodel1 = db.GetCollection<BsonDocument>("ldamodel1");
+
+            for (int i = 0; i < docDB.Count; i++)
+            {
+                BoWModel docModel = ((LDABoWModel)this[i]).GetLDADocModel();
+                ldamodel1.Insert(docModel.StoreToDB());
+            }
+        }
+
     }
 }

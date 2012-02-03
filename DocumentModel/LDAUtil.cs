@@ -85,16 +85,16 @@ namespace DocumentModel
          * argmax
          *
          */
-        public static int argmax(double[] x, int n)
+        public static int argmax(double[,] x, int idx)
         {
             int i;
-            double max = x[0];
+            double max = x[idx, 0];
             int argmax = 0;
-            for (i = 1; i < n; i++)
+            for (i = 1; i < x.GetLength(1); i++)
             {
-                if (x[i] > max)
+                if (x[idx, i] > max)
                 {
-                    max = x[i];
+                    max = x[idx, i];
                     argmax = i;
                 }
             }

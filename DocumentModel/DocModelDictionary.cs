@@ -241,5 +241,23 @@ namespace DocumentModel
         {
             return true;
         }
-    }   
+    }
+
+    class FilteredDictionary : DocModelDictionary
+    {
+        public override string CollName
+        {
+            get { return "filtereddict"; }
+        }
+
+        public override string DBName
+        {
+            get { return "docmodel"; }
+        }
+
+        public override bool LoadFilter(string key)
+        {
+            return true;
+        }
+    }
 }
