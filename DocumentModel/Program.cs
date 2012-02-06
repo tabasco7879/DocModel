@@ -10,7 +10,7 @@ using System.IO;
 namespace DocumentModel
 {
     class Program
-    {
+    {        
         static void Main(string[] args)
         {            
             Init(); 
@@ -19,12 +19,12 @@ namespace DocumentModel
                 LoadFromDB();
             }
             // LDA
-            docModelDB.Init();
-            docModelDB.RunEM();
+            //docModelDB.Init();
+            //docModelDB.RunEM();
             //docModelDB.TopBeta();
-            docModelDB.StoreLDADocModel();
+            //docModelDB.StoreLDADocModel();
             // print class labels
-            //docModelDB.Stats(classLabelDict);
+            docModelDB.Stats(classLabelDict);
             // filter word dictionary
             //docModelDB.TFIDFFilter();
         }
