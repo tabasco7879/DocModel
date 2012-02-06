@@ -179,7 +179,7 @@ namespace DocumentModel
             {
                 writer.WriteLine("{0} : {1}", orderCounts[i].Key, orderCounts[i].Value);            
             }
-            writer.Close();
+            writer.Close();           
 
             orderCounts.Clear();
             orderCounts = wordCounts.ToList();
@@ -194,12 +194,43 @@ namespace DocumentModel
                         return 1;
                 }
                 );
-            writer = new StreamWriter(new FileStream("classlabel_stats", FileMode.Create));
+            writer = new StreamWriter(new FileStream("word_stats", FileMode.Create));
             for (int i = 0; i < orderCounts.Count; i++)
             {
                 writer.WriteLine("{0} : {1}", orderCounts[i].Key, orderCounts[i].Value);
             }
             writer.Close();
+            orderCounts.Clear();
+            wordCounts.Clear();
+
+            HashSet<string> docIds = new HashSet<string>();
+            for (int i = 0; i < docDB.Count; i++)
+            {
+                BoWModel doc = ((BoWModel)docDB[i]);
+                if (doc.ClassLabels != null)
+                {
+                    foreach (int k in doc.ClassLabels)
+                    {
+                        string key = classLabelDict.GetKey(k);
+                        if (classLabelCounts[key] > 900)
+                        {
+                            if (!docIds.Contains(doc.DocID))
+                            {
+                                docIds.Add(doc.DocID);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            writer = new StreamWriter(new FileStream("doc_stats", FileMode.Create));
+            foreach (string s in docIds)
+            {
+                writer.WriteLine("{0}", s);
+            }
+            writer.Close();
+            classLabelCounts.Clear();
+            docIds.Clear();
         }
 
         public void TFIDFFilter()
