@@ -24,6 +24,41 @@ namespace DocumentModel
             gamma = new double[model.NumOfTopics];
         }
 
+        public void WritePhi()
+        {
+            string dir = DocID.Substring(0, 3);
+            string fileName = string.Format("{0}\\{1}", DocID.Substring(0, 3), DocID);
+            int length = Buffer.ByteLength(phi);
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            FileStream f = File.Create(fileName, length);
+            byte[] array = new byte[length];
+            Buffer.BlockCopy(phi, 0, array, 0, length);
+            f.Write(array, 0, length);
+            f.Close();
+            phi = null;            
+        }
+
+        public void ReadPhi()
+        {
+            if (phi == null)
+            {
+                phi = new double[Length, model.NumOfTopics];
+            }
+            string fileName = string.Format("{0}\\{1}", DocID.Substring(0, 3), DocID);
+            if (File.Exists(fileName))
+            {
+                int length = Buffer.ByteLength(phi);
+                byte[] array = new byte[length];
+                FileStream f = File.OpenRead(fileName);
+                f.Read(array, 0, length);
+                Buffer.BlockCopy(array, 0, phi, 0, length);
+                f.Close();
+            }
+        }
+
         public double LDAPostInfer()
         {
             if (phi == null)
@@ -339,7 +374,9 @@ namespace DocumentModel
             //StreamWriter sw = new StreamWriter(new FileStream("likelihood.test", FileMode.Create));
             for (int i = 0; i < Count; i++)
             {
+                //((LDABoWModel)this[i]).ReadPhi();
                 double d_likelihood = ((LDABoWModel)this[i]).LDAPostInfer();
+                //((LDABoWModel)this[i]).WritePhi();
                 //sw.WriteLine("{0}", d_likelihood);
                 likelihood += d_likelihood;
             }

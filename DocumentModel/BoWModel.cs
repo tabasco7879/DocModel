@@ -16,7 +16,9 @@ namespace DocumentModel
 
         public abstract int Count(int idx);
 
-        public abstract int Word(int idx);                
+        public abstract int Word(int idx);
+
+        public abstract string DocID { get; set; }        
     }
 
     // Bag of word
@@ -31,7 +33,7 @@ namespace DocumentModel
         {            
         }
 
-        public string DocID
+        public override string DocID
         {
             get;
             set;

@@ -14,6 +14,8 @@ namespace DocumentModel
         protected MongoDatabase db;
         protected MongoCollection<BsonDocument> coll;
         protected WordDictionary wordDict;
+        protected List<DocModel> docDB;
+        protected HashSet<string> trainingDocIds;
 
         public DocModelDB(WordDictionary wd)
         {
@@ -22,6 +24,27 @@ namespace DocumentModel
             coll = db.GetCollection<BsonDocument>(CollName);
             wordDict = wd;
             docDB = new List<DocModel>();
+            LoadTrainingDocIds();
+        }
+
+        public void LoadTrainingDocIds()
+        {
+            if (trainingDocIds == null)
+            {
+                trainingDocIds = new HashSet<string>();
+            }
+            else
+            {
+                trainingDocIds.Clear();
+            }
+
+            string line;
+            StreamReader reader = new StreamReader(new FileStream("doc_training_stats", FileMode.Open));
+            while ((line = reader.ReadLine()) != null)
+            {
+                trainingDocIds.Add(line.Trim());
+            }
+            reader.Close();
         }
 
         public virtual int Count
@@ -72,7 +95,7 @@ namespace DocumentModel
             foreach (BsonDocument doc in cursor)
             {
                 DocModel docModel = LoadFromDB(doc);
-                if (docModel != null)
+                if (docModel != null && trainingDocIds.Contains(docModel.DocID))
                 {
                     docDB.Add(docModel);
                     if (docDB.Count % 10000 == 0)
@@ -89,8 +112,7 @@ namespace DocumentModel
             docDB.Add(doc);
         } 
 
-        public abstract void Stats(DocModelDictionary classLabelDict);
-        protected List<DocModel> docDB;
+        public abstract void Stats(DocModelDictionary classLabelDict);        
     }
 
     class BoWModelDB : DocModelDB
@@ -125,7 +147,7 @@ namespace DocumentModel
         public override void Stats(DocModelDictionary classLabelDict)
         {
             if (docDB.Count == 0) return;
-            Dictionary<string, int> classLabelCounts = new Dictionary<string, int>();
+            Dictionary<string, List<string>> classLabelCounts = new Dictionary<string, List<string>>();
             Dictionary<string, int> wordCounts = new Dictionary<string, int>();
             for (int i = 0; i < docDB.Count; i++)
             {
@@ -133,18 +155,14 @@ namespace DocumentModel
                 if (doc.ClassLabels != null)
                 {
                     foreach (int k in doc.ClassLabels)
-                    {
-                        int count = 0;
+                    {                        
                         string key = classLabelDict.GetKey(k);
-                        if (classLabelCounts.TryGetValue(key, out count))
+                        List<string> docIds;
+                        if (classLabelCounts.TryGetValue(key, out docIds))                        
                         {
-                            count++;
-                            classLabelCounts[key] = count;
+                            docIds = new List<string>();
                         }
-                        else
-                        {
-                            classLabelCounts.Add(key, 1);
-                        }
+                        docIds.Add(doc.DocID);
                     }
                 }
                 for (int n = 0; n < doc.Length; n++)
@@ -162,28 +180,27 @@ namespace DocumentModel
                     }
                 }
             }
-            List<KeyValuePair<string, int>> orderCounts = classLabelCounts.ToList();
-            orderCounts.Sort(
+            List<KeyValuePair<string, List<string>>> orderedCLCounts = classLabelCounts.ToList();
+            orderedCLCounts.Sort(
                 (x1, x2) =>
                 {
-                    if (x1.Value > x2.Value)
+                    if (x1.Value.Count > x2.Value.Count)
                         return -1;
-                    else if (x1.Value == x2.Value)
+                    else if (x1.Value.Count == x2.Value.Count)
                         return 0;
                     else
                         return 1;
                 }
                 );
             StreamWriter writer = new StreamWriter(new FileStream("classlabel_stats", FileMode.Create));
-            for (int i = 0; i < orderCounts.Count; i++)
+            for (int i = 0; i < orderedCLCounts.Count; i++)
             {
-                writer.WriteLine("{0} : {1}", orderCounts[i].Key, orderCounts[i].Value);            
+                writer.WriteLine("{0} : {1}", orderedCLCounts[i].Key, orderedCLCounts[i].Value.Count);            
             }
-            writer.Close();           
+            writer.Close();
 
-            orderCounts.Clear();
-            orderCounts = wordCounts.ToList();
-            orderCounts.Sort(
+            List<KeyValuePair<string, int>> orderedWordCounts = wordCounts.ToList();
+            orderedWordCounts.Sort(
                 (x1, x2) =>
                 {
                     if (x1.Value > x2.Value)
@@ -195,42 +212,13 @@ namespace DocumentModel
                 }
                 );
             writer = new StreamWriter(new FileStream("word_stats", FileMode.Create));
-            for (int i = 0; i < orderCounts.Count; i++)
+            for (int i = 0; i < orderedWordCounts.Count; i++)
             {
-                writer.WriteLine("{0} : {1}", orderCounts[i].Key, orderCounts[i].Value);
+                writer.WriteLine("{0} : {1}", orderedWordCounts[i].Key, orderedWordCounts[i].Value);
             }
             writer.Close();
-            orderCounts.Clear();
-            wordCounts.Clear();
-
-            HashSet<string> docIds = new HashSet<string>();
-            for (int i = 0; i < docDB.Count; i++)
-            {
-                BoWModel doc = ((BoWModel)docDB[i]);
-                if (doc.ClassLabels != null)
-                {
-                    foreach (int k in doc.ClassLabels)
-                    {
-                        string key = classLabelDict.GetKey(k);
-                        if (classLabelCounts[key] > 900)
-                        {
-                            if (!docIds.Contains(doc.DocID))
-                            {
-                                docIds.Add(doc.DocID);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-            writer = new StreamWriter(new FileStream("doc_stats", FileMode.Create));
-            foreach (string s in docIds)
-            {
-                writer.WriteLine("{0}", s);
-            }
-            writer.Close();
-            classLabelCounts.Clear();
-            docIds.Clear();
+            orderedWordCounts.Clear();
+            wordCounts.Clear();                        
         }
 
         public void TFIDFFilter()
