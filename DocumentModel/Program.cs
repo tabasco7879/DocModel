@@ -13,22 +13,29 @@ namespace DocumentModel
     {        
         static void Main(string[] args)
         {            
-            Init(); 
-            if (docModelDB.Count == 0)
-            {
-                LoadFromDB();
-            }
+            Init();            
+            docModelDB = new LDABoWModelDB(50, wordDict);
+            //docModelDB.LoadFromDB();
             // LDA
-            docModelDB.Init();
-            docModelDB.RunEM();
-            docModelDB.TopBeta();
-            docModelDB.StoreLDADocModel();
+            string[] classLabels = Directory.GetFiles("training_data");
+            for (int i = 0; i < classLabels.Length; i++)
+            {
+                int classKey = int.Parse(
+                    classLabels[i].Substring(classLabels[i].LastIndexOf('_') + 1)
+                    );
+                docModelDB.LoadFromDBByClass(classKey);
+                docModelDB.Init();
+                docModelDB.RunEM();
+                docModelDB.TopBeta();
+                docModelDB.StoreLDA();
+            }
             // print class labels
             //docModelDB.Stats(classLabelDict);
             // filter word dictionary
             //docModelDB.TFIDFFilter();
         }
 
+        // Load data from original text file
         static void LoadFromDB()
         {            
             MongoServer server = MongoServer.Create();
@@ -100,12 +107,7 @@ namespace DocumentModel
             classLabelDict.LoadFromDB();
 
             wordDict = new WordDictionary();
-            wordDict.LoadFromDB();
-                        
-            docModelDB = new LDABoWModelDB(200, wordDict);
-            
-            docModelDB.LoadValidDocIds(classLabelDict.GetValue("Attitude of Health Personnel"));
-            docModelDB.LoadFromDB();            
+            wordDict.LoadFromDB();                                    
         }
 
         static void InitAP()

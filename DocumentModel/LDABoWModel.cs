@@ -13,15 +13,15 @@ namespace DocumentModel
     {
         double[] gamma;
         double[,] phi;
-        LDABoWModelDB model;
+        LDABoWModelDB modelDB;        
 
         public static int max_iter = 20;
         public const double CONVERGENCE = 1e-6;
 
         public LDABoWModel(LDABoWModelDB db)
         {
-            model = db;
-            gamma = new double[model.NumOfTopics];
+            modelDB = db;
+            gamma = new double[modelDB.NumOfTopics];
         }
 
         public void WritePhi()
@@ -45,7 +45,7 @@ namespace DocumentModel
         {
             if (phi == null)
             {
-                phi = new double[Length, model.NumOfTopics];
+                phi = new double[Length, modelDB.NumOfTopics];
             }
             string fileName = string.Format("{0}\\{1}", DocID.Substring(0, 3), DocID);
             if (File.Exists(fileName))
@@ -63,22 +63,22 @@ namespace DocumentModel
         {
             if (phi == null)
             {
-                phi = new double[Length, model.NumOfTopics];
-            }           
+                phi = new double[Length, modelDB.NumOfTopics];
+            }
 
-            double[] digamma_gam = new double[model.NumOfTopics];
+            double[] digamma_gam = new double[modelDB.NumOfTopics];
 
-            for (int k = 0; k < model.NumOfTopics; k++)
+            for (int k = 0; k < modelDB.NumOfTopics; k++)
             {
-                gamma[k] = model.Alpha + (double)WordCount / model.NumOfTopics;
+                gamma[k] = modelDB.Alpha + (double)WordCount / modelDB.NumOfTopics;
                 digamma_gam[k] = LDAUtil.digamma(gamma[k]);
                 for (int n = 0; n < Length; n++)
                 {
-                    phi[n, k] = 1.0 / model.NumOfTopics;
+                    phi[n, k] = 1.0 / modelDB.NumOfTopics;
                 }
             }
 
-            double[] oldphi = new double[model.NumOfTopics];
+            double[] oldphi = new double[modelDB.NumOfTopics];
 
             int iter = 0;
             double likelihood_old = 0, likelihood = 0, converged = 1 + CONVERGENCE;
@@ -87,17 +87,17 @@ namespace DocumentModel
                 for (int n = 0; n < Length; n++)
                 {
                     double phi_sum = 0;
-                    for (int k = 0; k < model.NumOfTopics; k++)
+                    for (int k = 0; k < modelDB.NumOfTopics; k++)
                     {
                         oldphi[k] = phi[n, k];
-                        phi[n, k] = digamma_gam[k] + model.Beta(Word(n), k);
+                        phi[n, k] = digamma_gam[k] + modelDB.Beta(Word(n), k);
                         if (k > 0)
                             phi_sum = LDAUtil.log_sum(phi_sum, phi[n, k]);
                         else
                             phi_sum = phi[n, k];
                     }
 
-                    for (int k = 0; k < model.NumOfTopics; k++)
+                    for (int k = 0; k < modelDB.NumOfTopics; k++)
                     {
                         phi[n, k] = Math.Exp(phi[n, k] - phi_sum); //normalize and exp
                         gamma[k] = gamma[k] + Count(n) * (phi[n, k] - oldphi[k]);
@@ -128,23 +128,23 @@ namespace DocumentModel
             // prepare sufficient stats
             for (int n = 0; n < Length; n++)
             {
-                for (int k = 0; k < model.NumOfTopics; k++)
+                for (int k = 0; k < modelDB.NumOfTopics; k++)
                 {
-                    double v = model.ClassWord(Word(n), k) + Count(n) * phi[n, k];
-                    model.ClassWord(Word(n), k, v);
-                    model.ClassTotal[k] += Count(n) * phi[n, k];
+                    double v = modelDB.ClassWord(Word(n), k) + Count(n) * phi[n, k];
+                    modelDB.ClassWord(Word(n), k, v);
+                    modelDB.ClassTotal[k] += Count(n) * phi[n, k];
                 }
             }
 
             double gamma_sum = 0;
-            for (int k = 0; k < model.NumOfTopics; k++)
+            for (int k = 0; k < modelDB.NumOfTopics; k++)
             {
                 gamma_sum += gamma[k];
-                model.AlphaSuffStats += LDAUtil.digamma(gamma[k]);
-                Debug.Assert(!double.IsNaN(model.AlphaSuffStats));
+                modelDB.AlphaSuffStats += LDAUtil.digamma(gamma[k]);
+                Debug.Assert(!double.IsNaN(modelDB.AlphaSuffStats));
             }
-            model.AlphaSuffStats -= model.NumOfTopics * LDAUtil.digamma(gamma_sum);
-            Debug.Assert(!double.IsNaN(model.AlphaSuffStats));
+            modelDB.AlphaSuffStats -= modelDB.NumOfTopics * LDAUtil.digamma(gamma_sum);
+            Debug.Assert(!double.IsNaN(modelDB.AlphaSuffStats));
 
             return (likelihood_old); // likelihood may less than likelihood_old
         }
@@ -153,21 +153,21 @@ namespace DocumentModel
         {
             double likelihood = 0;
 
-            double[] digamma_gam = new double[model.NumOfTopics];
+            double[] digamma_gam = new double[modelDB.NumOfTopics];
 
             double gamma_sum = 0;
-            for (int k = 0; k < model.NumOfTopics; k++)
+            for (int k = 0; k < modelDB.NumOfTopics; k++)
             {
                 digamma_gam[k] = LDAUtil.digamma(gamma[k]);
                 gamma_sum += gamma[k];
             }
             double dig_sum = LDAUtil.digamma(gamma_sum);
 
-            likelihood = model.LogGammaAlphaSum - model.SumLogGammaAlpha - LDAUtil.log_gamma(gamma_sum);
+            likelihood = modelDB.LogGammaAlphaSum - modelDB.SumLogGammaAlpha - LDAUtil.log_gamma(gamma_sum);
 
-            for (int k = 0; k < model.NumOfTopics; k++)
+            for (int k = 0; k < modelDB.NumOfTopics; k++)
             {
-                likelihood += (model.Alpha - 1) * (digamma_gam[k] - dig_sum) + LDAUtil.log_gamma(gamma[k])
+                likelihood += (modelDB.Alpha - 1) * (digamma_gam[k] - dig_sum) + LDAUtil.log_gamma(gamma[k])
                     - (gamma[k] - 1) * (digamma_gam[k] - dig_sum);
 
                 for (int n = 0; n < Length; n++)
@@ -175,7 +175,7 @@ namespace DocumentModel
                     if (phi[n, k] > 0)
                     {
                         likelihood += Count(n) * (phi[n, k] * ((digamma_gam[k] - dig_sum) - Math.Log(phi[n, k])
-                                        + model.Beta(Word(n), k)));
+                                        + modelDB.Beta(Word(n), k)));
                     }
                     else
                     {
@@ -187,13 +187,13 @@ namespace DocumentModel
             return likelihood;
         }
 
-        public BoWModel GetLDADocModel()
+        public BoWModel GetLDAModel()
         {
             BoWModel docModel = new BoWModel();
             for (int i = 0; i < Length; i++)
             {
                 int ldaWord = LDAUtil.argmax(phi, i);
-                docModel.AddWord(ldaWord, Count(i));
+                docModel.AddWord(Word(i), ldaWord);
             }
             docModel.ClassLabels = ClassLabels;            
             return docModel;
@@ -482,14 +482,14 @@ namespace DocumentModel
             sw.Close();
         }
 
-        public void StoreLDADocModel()
+        public void StoreLDA()
         {
-            MongoCollection<BsonDocument> ldamodel1 = db.GetCollection<BsonDocument>("ldamodel1");
+            MongoCollection<BsonDocument> ldamodel = db.GetCollection<BsonDocument>("ldamodel_" + NumOfTopics);
 
             for (int i = 0; i < docDB.Count; i++)
             {
-                BoWModel docModel = ((LDABoWModel)this[i]).GetLDADocModel();
-                ldamodel1.Insert(docModel.StoreToDB());
+                BoWModel docModel = ((LDABoWModel)this[i]).GetLDAModel();
+                ldamodel.Insert(docModel.StoreToDB());
             }
         }
 

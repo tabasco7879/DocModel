@@ -27,14 +27,22 @@ namespace DocumentModel
             validDocIds = new HashSet<string>();
         }
 
-        public void LoadValidDocIds(int classKey)
-        {            
-            validDocIds.Clear();
+        public void LoadFromDBByClass(int classKey)
+        {
+            docDB.Clear();
             string line;
             StreamReader reader = new StreamReader(new FileStream("training_data//doc_training_stats_" + classKey, FileMode.Open));
+            QueryDocument query;            
             while ((line = reader.ReadLine()) != null)
-            {
-                validDocIds.Add(line.Trim());
+            {                        
+                query = new QueryDocument("DocID", line.Trim());                           
+
+                DocModel docModel = LoadFromDB(coll.FindOne(query));
+                docDB.Add(docModel);
+                if (docDB.Count % 1000 == 0)
+                {
+                    Console.WriteLine("Loading {0} records", docDB.Count);                 
+                }
             }
             reader.Close();
         }
@@ -83,7 +91,7 @@ namespace DocumentModel
        
         public virtual void LoadFromDB()
         {            
-            MongoCursor<BsonDocument> cursor = coll.FindAll();
+            MongoCursor<BsonDocument> cursor = coll.FindAll();            
             foreach (BsonDocument doc in cursor)
             {
                 DocModel docModel = LoadFromDB(doc);
