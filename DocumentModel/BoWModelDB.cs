@@ -15,7 +15,7 @@ namespace DocumentModel
         protected MongoCollection<BsonDocument> coll;
         protected WordDictionary wordDict;
         protected List<DocModel> docDB;
-        protected HashSet<string> trainingDocIds;
+        protected HashSet<string> validDocIds;
 
         public DocModelDB(WordDictionary wd)
         {
@@ -24,27 +24,28 @@ namespace DocumentModel
             coll = db.GetCollection<BsonDocument>(CollName);
             wordDict = wd;
             docDB = new List<DocModel>();
-            LoadTrainingDocIds();
+            LoadValidDocIds();
         }
 
-        public void LoadTrainingDocIds()
+        public void LoadValidDocIds()
         {
-            if (trainingDocIds == null)
+            if (validDocIds == null)
             {
-                trainingDocIds = new HashSet<string>();
+                validDocIds = new HashSet<string>();
             }
             else
             {
-                trainingDocIds.Clear();
+                validDocIds.Clear();
             }
-
-            string line;
-            StreamReader reader = new StreamReader(new FileStream("doc_training_stats", FileMode.Open));
-            while ((line = reader.ReadLine()) != null)
-            {
-                trainingDocIds.Add(line.Trim());
-            }
-            reader.Close();
+            
+            //TODO: class label based
+            //string line;            
+            //StreamReader reader = new StreamReader(new FileStream("doc_training_stats", FileMode.Open));
+            //while ((line = reader.ReadLine()) != null)
+            //{
+            //    trainingDocIds.Add(line.Trim());
+            //}
+            //reader.Close();
         }
 
         public virtual int Count
@@ -95,7 +96,8 @@ namespace DocumentModel
             foreach (BsonDocument doc in cursor)
             {
                 DocModel docModel = LoadFromDB(doc);
-                if (docModel != null && trainingDocIds.Contains(docModel.DocID))
+                if (docModel != null
+                    && (validDocIds.Count == 0 || validDocIds.Contains(docModel.DocID)))
                 {
                     docDB.Add(docModel);
                     if (docDB.Count % 10000 == 0)
@@ -147,8 +149,8 @@ namespace DocumentModel
         public override void Stats(DocModelDictionary classLabelDict)
         {
             if (docDB.Count == 0) return;
-            Dictionary<string, List<string>> classLabelCounts = new Dictionary<string, List<string>>();
-            Dictionary<string, int> wordCounts = new Dictionary<string, int>();
+            Dictionary<int, HashSet<string>> classLabelCounts = new Dictionary<int, HashSet<string>>();
+            Dictionary<int, int> wordCounts = new Dictionary<int, int>();
             for (int i = 0; i < docDB.Count; i++)
             {
                 BoWModel doc = ((BoWModel)docDB[i]);
@@ -156,11 +158,12 @@ namespace DocumentModel
                 {
                     foreach (int k in doc.ClassLabels)
                     {                        
-                        string key = classLabelDict.GetKey(k);
-                        List<string> docIds;
-                        if (classLabelCounts.TryGetValue(key, out docIds))                        
+                        //string key = classLabelDict.GetKey(k);
+                        HashSet<string> docIds;
+                        if (!classLabelCounts.TryGetValue(k, out docIds))                        
                         {
-                            docIds = new List<string>();
+                            docIds = new HashSet<string>();
+                            classLabelCounts.Add(k, docIds);
                         }
                         docIds.Add(doc.DocID);
                     }
@@ -168,19 +171,19 @@ namespace DocumentModel
                 for (int n = 0; n < doc.Length; n++)
                 {
                     int count = 0;
-                    string key = wordDict.GetKey(doc.Word(n));
-                    if (wordCounts.TryGetValue(key, out count))
+                    //string key = wordDict.GetKey(doc.Word(n));
+                    if (wordCounts.TryGetValue(doc.Word(n), out count))
                     {
                         count += doc.Count(n);
-                        wordCounts[key] = count;
+                        wordCounts[doc.Word(n)] = count;
                     }
                     else
                     {
-                        wordCounts.Add(key, doc.Count(n));
+                        wordCounts.Add(doc.Word(n), doc.Count(n));
                     }
                 }
             }
-            List<KeyValuePair<string, List<string>>> orderedCLCounts = classLabelCounts.ToList();
+            List<KeyValuePair<int, HashSet<string>>> orderedCLCounts = classLabelCounts.ToList();
             orderedCLCounts.Sort(
                 (x1, x2) =>
                 {
@@ -195,11 +198,11 @@ namespace DocumentModel
             StreamWriter writer = new StreamWriter(new FileStream("classlabel_stats", FileMode.Create));
             for (int i = 0; i < orderedCLCounts.Count; i++)
             {
-                writer.WriteLine("{0} : {1}", orderedCLCounts[i].Key, orderedCLCounts[i].Value.Count);            
+                writer.WriteLine("{0} : {1}", classLabelDict.GetKey(orderedCLCounts[i].Key), orderedCLCounts[i].Value.Count);            
             }
             writer.Close();
 
-            List<KeyValuePair<string, int>> orderedWordCounts = wordCounts.ToList();
+            List<KeyValuePair<int, int>> orderedWordCounts = wordCounts.ToList();
             orderedWordCounts.Sort(
                 (x1, x2) =>
                 {
@@ -214,11 +217,105 @@ namespace DocumentModel
             writer = new StreamWriter(new FileStream("word_stats", FileMode.Create));
             for (int i = 0; i < orderedWordCounts.Count; i++)
             {
-                writer.WriteLine("{0} : {1}", orderedWordCounts[i].Key, orderedWordCounts[i].Value);
+                writer.WriteLine("{0} : {1}", wordDict.GetKey(orderedWordCounts[i].Key), orderedWordCounts[i].Value);
             }
             writer.Close();
             orderedWordCounts.Clear();
-            wordCounts.Clear();                        
+            wordCounts.Clear();
+
+            List<string> candiates = new List<string>();
+            for (int i = 0; i < docDB.Count; i++)
+            {
+                BoWModel doc = ((BoWModel)docDB[i]);
+                if (doc.ClassLabels != null)
+                {
+                    foreach (int k in doc.ClassLabels)
+                    {
+                        if (classLabelCounts[k].Count > 900)
+                        {
+                            candiates.Add(doc.DocID);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            writer = new StreamWriter(new FileStream("doc_stats", FileMode.Create));
+            for (int i = 0; i < candiates.Count; i++)
+            {                
+                writer.WriteLine("{0}", candiates[i]);                
+            }
+            writer.Close();
+            
+            foreach (KeyValuePair<int, HashSet<string>> kvp in classLabelCounts)
+            {
+                if (kvp.Value.Count > 900)
+                {
+                    HashSet<string> training = new HashSet<string>();
+                    HashSet<string> crsvalid = new HashSet<string>();
+                    HashSet<string> testing = new HashSet<string>();
+                    int trainingSize = (int)(kvp.Value.Count * 0.7);
+                    int crsvalidSize = (int)(kvp.Value.Count * 0.1);
+                    int testingSize = kvp.Value.Count - trainingSize - crsvalidSize;
+                    int i = 0;
+                    foreach (string s in kvp.Value)
+                    {
+                        if (i < trainingSize)
+                        {
+                            training.Add(s);
+                        }
+                        else if (i < trainingSize + crsvalidSize)
+                        {
+                            crsvalid.Add(s);
+                        }
+                        else
+                        {
+                            testing.Add(s);
+                        }                                     
+                    }
+                    HashSet<string> usedDocs = new HashSet<string>();
+
+                    RandomlyFill(training, kvp.Value, usedDocs, candiates, 7000);
+                    RandomlyFill(crsvalid, kvp.Value, usedDocs, candiates, 1000);
+                    RandomlyFill(testing, kvp.Value, usedDocs, candiates, 2000);
+
+                    writer = new StreamWriter(new FileStream("doc_training_stats_" + kvp.Key, FileMode.Create));
+                    foreach(string s in training)
+                    {
+                        writer.WriteLine("{0}", s);
+                    }
+                    writer.Close();
+
+                    writer = new StreamWriter(new FileStream("doc_crsvalid_stats_" + kvp.Key, FileMode.Create));
+                    foreach (string s in crsvalid)
+                    {
+                        writer.WriteLine("{0}", s);
+                    }
+                    writer.Close();
+
+                    writer = new StreamWriter(new FileStream("doc_testing_stats_" + kvp.Key, FileMode.Create));
+                    foreach (string s in testing)
+                    {
+                        writer.WriteLine("{0}", s);
+                    }
+                    writer.Close();
+                }
+            }
+        }
+
+        private void RandomlyFill(HashSet<string> fillingSet, HashSet<string> exclusionSet,
+            HashSet<string> usedSet, List<string> candidateSet, int bound)
+        {
+            Random rand = new Random();
+            while (fillingSet.Count < bound)
+            {
+                int idx = (int)Math.Floor(rand.NextDouble() * candidateSet.Count);
+                if (!exclusionSet.Contains(candidateSet[idx]) && !usedSet.Contains(candidateSet[idx]))
+                {
+                    fillingSet.Add(candidateSet[idx]);
+                    usedSet.Add(candidateSet[idx]);
+                }
+            }
         }
 
         public void TFIDFFilter()

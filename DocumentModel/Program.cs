@@ -19,12 +19,12 @@ namespace DocumentModel
                 LoadFromDB();
             }
             // LDA
-            docModelDB.Init();
-            docModelDB.RunEM();
-            docModelDB.TopBeta();
-            docModelDB.StoreLDADocModel();
+            //docModelDB.Init();
+            //docModelDB.RunEM();
+            //docModelDB.TopBeta();
+            //docModelDB.StoreLDADocModel();
             // print class labels
-            //docModelDB.Stats(classLabelDict);
+            docModelDB.Stats(classLabelDict);
             // filter word dictionary
             //docModelDB.TFIDFFilter();
         }
