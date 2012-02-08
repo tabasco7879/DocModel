@@ -24,28 +24,19 @@ namespace DocumentModel
             coll = db.GetCollection<BsonDocument>(CollName);
             wordDict = wd;
             docDB = new List<DocModel>();
-            LoadValidDocIds();
+            validDocIds = new HashSet<string>();
         }
 
-        public void LoadValidDocIds()
-        {
-            if (validDocIds == null)
+        public void LoadValidDocIds(int classKey)
+        {            
+            validDocIds.Clear();
+            string line;
+            StreamReader reader = new StreamReader(new FileStream("training_data//doc_training_stats_" + classKey, FileMode.Open));
+            while ((line = reader.ReadLine()) != null)
             {
-                validDocIds = new HashSet<string>();
+                validDocIds.Add(line.Trim());
             }
-            else
-            {
-                validDocIds.Clear();
-            }
-            
-            //TODO: class label based
-            //string line;            
-            //StreamReader reader = new StreamReader(new FileStream("doc_training_stats", FileMode.Open));
-            //while ((line = reader.ReadLine()) != null)
-            //{
-            //    trainingDocIds.Add(line.Trim());
-            //}
-            //reader.Close();
+            reader.Close();
         }
 
         public virtual int Count
@@ -91,7 +82,7 @@ namespace DocumentModel
         public abstract DocModel LoadFromDB(BsonDocument bsonDoc);
        
         public virtual void LoadFromDB()
-        {           
+        {            
             MongoCursor<BsonDocument> cursor = coll.FindAll();
             foreach (BsonDocument doc in cursor)
             {
@@ -279,21 +270,21 @@ namespace DocumentModel
                     RandomlyFill(crsvalid, kvp.Value, usedDocs, candiates, 1000);
                     RandomlyFill(testing, kvp.Value, usedDocs, candiates, 2000);
 
-                    writer = new StreamWriter(new FileStream("doc_training_stats_" + kvp.Key, FileMode.Create));
+                    writer = new StreamWriter(new FileStream("training_data\\doc_training_stats_" + kvp.Key, FileMode.Create));
                     foreach(string s in training)
                     {
                         writer.WriteLine("{0}", s);
                     }
                     writer.Close();
 
-                    writer = new StreamWriter(new FileStream("doc_crsvalid_stats_" + kvp.Key, FileMode.Create));
+                    writer = new StreamWriter(new FileStream("crsvalid_data\\doc_crsvalid_stats_" + kvp.Key, FileMode.Create));
                     foreach (string s in crsvalid)
                     {
                         writer.WriteLine("{0}", s);
                     }
                     writer.Close();
 
-                    writer = new StreamWriter(new FileStream("doc_testing_stats_" + kvp.Key, FileMode.Create));
+                    writer = new StreamWriter(new FileStream("testing_data\\doc_testing_stats_" + kvp.Key, FileMode.Create));
                     foreach (string s in testing)
                     {
                         writer.WriteLine("{0}", s);
