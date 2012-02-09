@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 using System.IO;
+using System.Diagnostics;
 
 namespace DocumentModel
 {
@@ -14,8 +16,7 @@ namespace DocumentModel
         protected MongoDatabase db;
         protected MongoCollection<BsonDocument> coll;
         protected WordDictionary wordDict;
-        protected List<DocModel> docDB;
-        protected HashSet<string> validDocIds;
+        protected List<DocModel> docDB;        
 
         public DocModelDB(WordDictionary wd)
         {
@@ -23,8 +24,7 @@ namespace DocumentModel
             db = server.GetDatabase(DBName);
             coll = db.GetCollection<BsonDocument>(CollName);
             wordDict = wd;
-            docDB = new List<DocModel>();
-            validDocIds = new HashSet<string>();
+            docDB = new List<DocModel>();           
         }
 
         public void LoadFromDBByClass(int classKey)
@@ -32,19 +32,26 @@ namespace DocumentModel
             docDB.Clear();
             string line;
             StreamReader reader = new StreamReader(new FileStream("training_data//doc_training_stats_" + classKey, FileMode.Open));
-            QueryDocument query;            
+            List<BsonValue> ids = new List<BsonValue>();                        
             while ((line = reader.ReadLine()) != null)
-            {                        
-                query = new QueryDocument("DocID", line.Trim());                           
-
-                DocModel docModel = LoadFromDB(coll.FindOne(query));
-                docDB.Add(docModel);
-                if (docDB.Count % 1000 == 0)
-                {
-                    Console.WriteLine("Loading {0} records", docDB.Count);                 
-                }
+            {
+                ids.Add(line.Trim());                
             }
             reader.Close();
+            var query = Query.In("DocID", ids);
+            foreach (BsonDocument doc in coll.Find(query))
+            {
+                DocModel docModel = LoadFromDB(doc);
+                if (docModel != null)
+                {
+                    docDB.Add(docModel);
+                    if (docDB.Count % 1000 == 0)
+                    {
+                        Console.WriteLine("Loading {0} records", docDB.Count);
+                        //break;
+                    }
+                }
+            }            
         }
 
         public virtual int Count
@@ -95,8 +102,7 @@ namespace DocumentModel
             foreach (BsonDocument doc in cursor)
             {
                 DocModel docModel = LoadFromDB(doc);
-                if (docModel != null
-                    && (validDocIds.Count == 0 || validDocIds.Contains(docModel.DocID)))
+                if (docModel != null)
                 {
                     docDB.Add(docModel);
                     if (docDB.Count % 10000 == 0)

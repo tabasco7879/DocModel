@@ -64,7 +64,6 @@
     <None Include="ap.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="app.config" />
     <None Include="classlabel_stats" />
     <None Include="doc_crsvalid_stats" />
     <None Include="doc_stats" />

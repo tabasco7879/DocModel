@@ -190,6 +190,7 @@ namespace DocumentModel
         public BoWModel GetLDAModel()
         {
             BoWModel docModel = new BoWModel();
+            docModel.DocID = DocID;
             for (int i = 0; i < Length; i++)
             {
                 int ldaWord = LDAUtil.argmax(phi, i);
