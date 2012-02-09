@@ -21,7 +21,14 @@ namespace DocumentModel
         public LDABoWModel(LDABoWModelDB db)
         {
             modelDB = db;
+            Init();
+        }
+
+        public void Init()
+        {
+            if(gamma != null) gamma = null;
             gamma = new double[modelDB.NumOfTopics];
+            if (phi != null) phi = null;            
         }
 
         public void WritePhi()
@@ -52,7 +59,7 @@ namespace DocumentModel
             {
                 int length = Buffer.ByteLength(phi);
                 byte[] array = new byte[length];
-                FileStream f = File.OpenRead(fileName);
+                FileStream f = File.OpenRead(fileName);                
                 f.Read(array, 0, length);
                 Buffer.BlockCopy(array, 0, phi, 0, length);
                 f.Close();
@@ -123,8 +130,13 @@ namespace DocumentModel
                 //    digamma_gam[k] = LDAUtil.digamma(gamma[k]);
                 //}
                 iter++;
-            }
+            }            
 
+            return (likelihood_old); // likelihood may less than likelihood_old
+        }
+
+        public void UpdateSuffStat()
+        {
             // prepare sufficient stats
             for (int n = 0; n < Length; n++)
             {
@@ -145,8 +157,6 @@ namespace DocumentModel
             }
             modelDB.AlphaSuffStats -= modelDB.NumOfTopics * LDAUtil.digamma(gamma_sum);
             Debug.Assert(!double.IsNaN(modelDB.AlphaSuffStats));
-
-            return (likelihood_old); // likelihood may less than likelihood_old
         }
 
         public double LDALikelihood(double[] gamma, double[,] phi)
@@ -260,6 +270,11 @@ namespace DocumentModel
             foreach (KeyValuePair<string, int> kvp in wordDict.Dictionary)
             {
                 class_word.Add(kvp.Value, new double[NumOfTopics]);
+            }
+
+            for (int i = 0; i < docDB.Count; i++)
+            {
+                ((LDABoWModel)docDB[i]).Init();
             }
         }
 
@@ -377,6 +392,7 @@ namespace DocumentModel
             {
                 //((LDABoWModel)this[i]).ReadPhi();
                 double d_likelihood = ((LDABoWModel)this[i]).LDAPostInfer();
+                ((LDABoWModel)this[i]).UpdateSuffStat();
                 //((LDABoWModel)this[i]).WritePhi();
                 //sw.WriteLine("{0}", d_likelihood);
                 likelihood += d_likelihood;
@@ -483,10 +499,33 @@ namespace DocumentModel
             sw.Close();
         }
 
-        public void StoreLDA()
+        public void SaveModel(int classKey)
         {
-            MongoCollection<BsonDocument> ldamodel = db.GetCollection<BsonDocument>("ldamodel_" + NumOfTopics);
+            StreamWriter writer = new StreamWriter(new FileStream("model\\ldamodel_" + classKey + "_" + NumOfTopics+".beta", FileMode.Create));
+            foreach (KeyValuePair<int, double[]> kvp in beta)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(kvp.Key);
+                sb.Append(':');
+                for (int i = 0; i < kvp.Value.Length; i++)
+                {
+                    sb.Append(kvp.Value[i]);
+                    sb.Append(',');
+                }
+                sb.Remove(sb.Length - 1, 1);
+                writer.WriteLine(sb.ToString());
+            }
+            writer.Close();
 
+            writer = new StreamWriter(new FileStream("model\\ldamodel_" + classKey + "_" + NumOfTopics + ".alpha", FileMode.Create));
+            writer.WriteLine(alpha);
+            writer.Close();
+        }
+
+        public void StoreLDA(int classKey, string type)
+        {
+            MongoCollection<BsonDocument> ldamodel = db.GetCollection<BsonDocument>("ldamodel_"+ type +"_" + classKey + "_" + NumOfTopics);
+            ldamodel.RemoveAll();            
             for (int i = 0; i < docDB.Count; i++)
             {
                 BoWModel docModel = ((LDABoWModel)this[i]).GetLDAModel();

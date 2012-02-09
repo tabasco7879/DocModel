@@ -27,11 +27,11 @@ namespace DocumentModel
             docDB = new List<DocModel>();           
         }
 
-        public void LoadFromDBByClass(int classKey)
+        public void LoadFromDBByClass(int classKey, string type)
         {
             docDB.Clear();
             string line;
-            StreamReader reader = new StreamReader(new FileStream("training_data//doc_training_stats_" + classKey, FileMode.Open));
+            StreamReader reader = new StreamReader(new FileStream(type+"_data//doc_"+ type +"_stats_" + classKey, FileMode.Open));
             List<BsonValue> ids = new List<BsonValue>();                        
             while ((line = reader.ReadLine()) != null)
             {
@@ -52,7 +52,7 @@ namespace DocumentModel
                     }
                 }
             }            
-        }
+        }        
 
         public virtual int Count
         {

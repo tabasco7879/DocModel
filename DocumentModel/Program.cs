@@ -23,11 +23,15 @@ namespace DocumentModel
                 int classKey = int.Parse(
                     classLabels[i].Substring(classLabels[i].LastIndexOf('_') + 1)
                     );
-                docModelDB.LoadFromDBByClass(classKey);
+                docModelDB.LoadFromDBByClass(classKey, "training");
                 docModelDB.Init();
                 docModelDB.RunEM();
-                docModelDB.TopBeta();
-                docModelDB.StoreLDA();
+                docModelDB.SaveModel(classKey);
+                docModelDB.StoreLDA(classKey, "training");
+                // inference on cross validation data
+                docModelDB.LoadFromDBByClass(classKey, "crsvalid");
+                docModelDB.E_Step(); 
+                docModelDB.StoreLDA(classKey, "crsvalid");
             }
             // print class labels
             //docModelDB.Stats(classLabelDict);
