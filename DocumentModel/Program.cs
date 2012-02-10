@@ -12,8 +12,15 @@ namespace DocumentModel
     class Program
     {        
         static void Main(string[] args)
-        {            
-            Init();            
+        {                                   
+            // filter word dictionary
+            //docModelDB.TFIDFFilter();
+            LDAEstimate();
+        }
+
+        static void LDAEstimate()
+        {
+            InitDict();
             docModelDB = new LDABoWModelDB(50, wordDict);
             //docModelDB.LoadFromDB();
             // LDA
@@ -30,13 +37,18 @@ namespace DocumentModel
                 docModelDB.StoreLDA(classKey, "training");
                 // inference on cross validation data
                 docModelDB.LoadFromDBByClass(classKey, "crsvalid");
-                docModelDB.E_Step(); 
+                docModelDB.E_Step();
                 docModelDB.StoreLDA(classKey, "crsvalid");
             }
+        }
+
+        static void Stats()
+        {
+            InitDict();
+            docModelDB = new LDABoWModelDB(1, wordDict);
+            docModelDB.LoadFromDB();
             // print class labels
-            //docModelDB.Stats(classLabelDict);
-            // filter word dictionary
-            //docModelDB.TFIDFFilter();
+            docModelDB.Stats(classLabelDict);
         }
 
         // Load data from original text file
@@ -105,14 +117,14 @@ namespace DocumentModel
             }
         }       
 
-        static void Init()
+        static void InitDict()
         {
             classLabelDict = new ClassLabelDictionary();
             classLabelDict.LoadFromDB();
 
             wordDict = new WordDictionary();
             wordDict.LoadFromDB();                                    
-        }
+        }        
 
         static void InitAP()
         {

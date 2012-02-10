@@ -276,7 +276,8 @@ namespace DocumentModel
                         else
                         {
                             testing.Add(s);
-                        }                                     
+                        }
+                        i++;             
                     }
                     HashSet<string> usedDocs = new HashSet<string>();
 
