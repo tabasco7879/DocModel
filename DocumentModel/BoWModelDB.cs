@@ -281,7 +281,7 @@ namespace DocumentModel
                     }
                     HashSet<string> usedDocs = new HashSet<string>();
 
-                    RandomlyFill(training, kvp.Value, usedDocs, candiates, 7000);
+                    RandomlyFill(training, kvp.Value, usedDocs, candiates, (int)(trainingSize/0.7));
                     RandomlyFill(crsvalid, kvp.Value, usedDocs, candiates, 1000);
                     RandomlyFill(testing, kvp.Value, usedDocs, candiates, 2000);
 

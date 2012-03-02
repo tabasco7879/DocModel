@@ -12,10 +12,9 @@ namespace DocumentModel
     class Program
     {        
         static void Main(string[] args)
-        {                                   
-            // filter word dictionary
-            //docModelDB.TFIDFFilter();
-            LDAEstimate();
+        {                                               
+            LDAEstimate(116);
+            //Stats();
         }
 
         static void LDAEstimate()
@@ -40,6 +39,22 @@ namespace DocumentModel
                 docModelDB.E_Step();
                 docModelDB.StoreLDA(classKey, "crsvalid");
             }
+        }
+
+        static void LDAEstimate(int classKey)
+        {
+            InitDict();
+            docModelDB = new LDABoWModelDB(50, wordDict);            
+            // LDA            
+            docModelDB.LoadFromDBByClass(classKey, "training");
+            docModelDB.Init();
+            docModelDB.RunEM();
+            docModelDB.SaveModel(classKey);
+            docModelDB.StoreLDA(classKey, "training");
+            // inference on cross validation data
+            docModelDB.LoadFromDBByClass(classKey, "crsvalid");
+            docModelDB.E_Step();
+            docModelDB.StoreLDA(classKey, "crsvalid");            
         }
 
         static void Stats()

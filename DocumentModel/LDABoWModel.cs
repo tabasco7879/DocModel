@@ -530,7 +530,7 @@ namespace DocumentModel
             {
                 BoWModel docModel = ((LDABoWModel)this[i]).GetLDAModel();
                 ldamodel.Insert(docModel.StoreToDB());
-            }
+            }            
         }
 
     }
