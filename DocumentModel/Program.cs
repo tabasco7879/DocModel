@@ -13,49 +13,80 @@ namespace DocumentModel
     {        
         static void Main(string[] args)
         {                                               
-            LDAEstimate(116);
+            //LDAEstimate(116);
             //Stats();
-        }
-
-        static void LDAEstimate()
-        {
-            InitDict();
-            docModelDB = new LDABoWModelDB(50, wordDict);
-            //docModelDB.LoadFromDB();
-            // LDA
-            string[] classLabels = Directory.GetFiles("training_data");
-            for (int i = 0; i < classLabels.Length; i++)
+            //GenerateTFIDFDictionary();
+            //CompileDataSet();
+            int[] listOfTopicNumbers = { 10 };
+            for (int i = 0; i < listOfTopicNumbers.Length; i++)
             {
-                int classKey = int.Parse(
-                    classLabels[i].Substring(classLabels[i].LastIndexOf('_') + 1)
-                    );
-                docModelDB.LoadFromDBByClass(classKey, "training");
-                docModelDB.Init();
-                docModelDB.RunEM();
-                docModelDB.SaveModel(classKey);
-                docModelDB.StoreLDA(classKey, "training");
-                // inference on cross validation data
-                docModelDB.LoadFromDBByClass(classKey, "crsvalid");
-                docModelDB.E_Step();
-                docModelDB.StoreLDA(classKey, "crsvalid");
+                LDAEstimateDataSet("doc_set_cls_1000", listOfTopicNumbers[i]);
             }
         }
 
-        static void LDAEstimate(int classKey)
+        // generate a compact dictionary using TFIDF measure
+        static void GenerateTFIDFDictionary()
         {
             InitDict();
-            docModelDB = new LDABoWModelDB(50, wordDict);            
-            // LDA            
-            docModelDB.LoadFromDBByClass(classKey, "training");
-            docModelDB.Init();
-            docModelDB.RunEM();
-            docModelDB.SaveModel(classKey);
-            docModelDB.StoreLDA(classKey, "training");
-            // inference on cross validation data
-            docModelDB.LoadFromDBByClass(classKey, "crsvalid");
-            docModelDB.E_Step();
-            docModelDB.StoreLDA(classKey, "crsvalid");            
+            BoWModelDB docDB = new BoWModelDB(wordDict);
+            docDB.LoadFromDB();
+            docDB.GenerateTFIDFDictionary();                        
         }
+
+        static void CompileDataSet()
+        {
+            InitTFIDFDict();
+            BoWModelDB docDB = new BoWModelDB(tfidfDict);
+            docDB.LoadFromDB();
+            Dictionary<int, int> clsCounts = new Dictionary<int, int>();
+            for (int i = 0; i < docDB.Count; i++)
+            {
+                if (((BoWModel)docDB[i]).ClassLabels != null)
+                {
+                    foreach (int cls in ((BoWModel)docDB[i]).ClassLabels)
+                    {
+                        int count = 0;
+                        if (clsCounts.TryGetValue(cls, out count))
+                            clsCounts[cls] = count + 1;
+                        else
+                            clsCounts.Add(cls, 1);
+                    }
+                }
+            }
+
+            StreamWriter writer = new StreamWriter(new FileStream("doc_set_cls_1000", FileMode.Create));
+            for (int i = 0; i < docDB.Count; i++)
+            {
+                bool selected = false;
+                if (((BoWModel)docDB[i]).ClassLabels != null)
+                {
+                    foreach (int cls in ((BoWModel)docDB[i]).ClassLabels)
+                    {
+                        if (clsCounts[cls] >= 1000)
+                        {
+                            selected = true;
+                            break;
+                        }
+                    }
+                }
+                if (selected)
+                {
+                    writer.WriteLine(docDB[i].DocID);
+                }
+            }
+            writer.Close();
+        }
+
+        static void LDAEstimateDataSet(string dataSetName, int numOfTopics)
+        {
+            InitTFIDFDict();
+            docModelDB = new LDABoWModelDB(10, tfidfDict);
+            docModelDB.LDACollectionName = "ldaCollection_" + numOfTopics;
+            docModelDB.LoadFromDBByDataSet(dataSetName);
+            docModelDB.Init();
+            docModelDB.RunEM(true);
+            docModelDB.SaveLDAModel();
+        }              
 
         static void Stats()
         {
@@ -139,7 +170,16 @@ namespace DocumentModel
 
             wordDict = new WordDictionary();
             wordDict.LoadFromDB();                                    
-        }        
+        }
+
+        static void InitTFIDFDict()
+        {
+            classLabelDict = new ClassLabelDictionary();
+            classLabelDict.LoadFromDB();
+
+            tfidfDict = new TFIDFDictionary();
+            tfidfDict.LoadFromDB();                                    
+        }
 
         static void InitAP()
         {
@@ -168,6 +208,7 @@ namespace DocumentModel
         static List<object> detachRule = new List<object>();
         static ClassLabelDictionary classLabelDict;
         static WordDictionary wordDict;
+        static TFIDFDictionary tfidfDict;
         static LDABoWModelDB docModelDB;
     }    
 }

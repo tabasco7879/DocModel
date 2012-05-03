@@ -243,11 +243,11 @@ namespace DocumentModel
         }
     }
 
-    class FilteredDictionary : DocModelDictionary
+    class TFIDFDictionary : DocModelDictionary
     {
         public override string CollName
         {
-            get { return "filtereddict"; }
+            get { return "tfidfdict"; }
         }
 
         public override string DBName

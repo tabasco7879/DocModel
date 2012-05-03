@@ -15,10 +15,10 @@ namespace DocumentModel
         protected MongoServer server;
         protected MongoDatabase db;
         protected MongoCollection<BsonDocument> coll;
-        protected WordDictionary wordDict;
-        protected List<DocModel> docDB;        
+        protected DocModelDictionary wordDict;
+        protected List<DocModel> docDB;
 
-        public DocModelDB(WordDictionary wd)
+        public DocModelDB(DocModelDictionary wd)
         {
             server = MongoServer.Create();
             db = server.GetDatabase(DBName);
@@ -52,7 +52,34 @@ namespace DocumentModel
                     }
                 }
             }            
-        }        
+        }
+
+        public void LoadFromDBByDataSet(string dataSetName)
+        {
+            docDB.Clear();
+            StreamReader reader = new StreamReader(new FileStream(dataSetName, FileMode.Open));
+            List<BsonValue> ids = new List<BsonValue>();
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                ids.Add(line.Trim());
+            }
+            reader.Close();
+            var query = Query.In("DocID", ids);
+            foreach (BsonDocument doc in coll.Find(query))
+            {
+                DocModel docModel = LoadFromDB(doc);
+                if (docModel != null)
+                {
+                    docDB.Add(docModel);
+                    if (docDB.Count % 10000 == 0)
+                    {
+                        Console.WriteLine("Loading {0} records", docDB.Count);
+                        //break;
+                    }
+                }
+            }
+        }
 
         public virtual int Count
         {
@@ -124,7 +151,8 @@ namespace DocumentModel
 
     class BoWModelDB : DocModelDB
     {
-        public BoWModelDB(WordDictionary wd): base(wd)
+        public BoWModelDB(DocModelDictionary wd)
+            : base(wd)
         {
             
         }
@@ -324,7 +352,7 @@ namespace DocumentModel
             }
         }
 
-        public void TFIDFFilter()
+        public void GenerateTFIDFDictionary()
         {
             Dictionary<int, TFIDF> tfidfDict = new Dictionary<int, TFIDF>();
             foreach (DocModel m in docDB)
@@ -360,13 +388,13 @@ namespace DocumentModel
                     {
                         return 1;
                     }
-                });            
-            FilteredDictionary filteredDict = new FilteredDictionary();
+                });
+            TFIDFDictionary tfidfDictionary = new TFIDFDictionary();
             for (int i = 0; i < tfidfs.Count && i < 20000; i++)
             {
-                filteredDict.AddValue(wordDict.GetKey(tfidfs[i].Key), tfidfs[i].Key);
+                tfidfDictionary.AddValue(wordDict.GetKey(tfidfs[i].Key), tfidfs[i].Key);
             }
-            filteredDict.StoreToDB();
+            tfidfDictionary.StoreToDB();
         }
 
         class TFIDF

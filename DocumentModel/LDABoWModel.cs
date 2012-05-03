@@ -66,11 +66,22 @@ namespace DocumentModel
             }
         }
 
-        public double LDAPostInfer()
+        public void ClearMemory()
+        {
+            gamma = null;
+            phi = null;
+        }
+
+        public double LDAInference()
         {
             if (phi == null)
             {
                 phi = new double[Length, modelDB.NumOfTopics];
+            }
+
+            if (gamma == null)
+            {
+                gamma = new double[modelDB.NumOfTopics];
             }
 
             double[] digamma_gam = new double[modelDB.NumOfTopics];
@@ -197,6 +208,7 @@ namespace DocumentModel
             return likelihood;
         }
 
+        /*
         public BoWModel GetLDAModel()
         {
             BoWModel docModel = new BoWModel();
@@ -208,6 +220,19 @@ namespace DocumentModel
             }
             docModel.ClassLabels = ClassLabels;            
             return docModel;
+        }
+        */
+
+        public LDAModel GetLDAModel()
+        {
+            LDAModel ldaModel = new LDAModel();
+            ldaModel.DocID = DocID;
+            ldaModel.ClassLabels = ClassLabels;
+            for (int i = 0; i < gamma.Length; i++)
+            {
+                ldaModel.AddWord(i, gamma[i]);
+            }
+            return ldaModel;
         }
     }
 
@@ -230,10 +255,10 @@ namespace DocumentModel
         public const double CONVERGENCE = 1e-4;
         public const int NUM_INIT = 1;
 
-        public LDABoWModelDB(int numOfTopics, WordDictionary wd)
+        public LDABoWModelDB(int numOfTopics, DocModelDictionary wd)
             : base(wd)
         {
-            alpha = 0.1;
+            alpha = 0.8;
             NumOfTopics = numOfTopics;
             //Init();
         }
@@ -353,6 +378,11 @@ namespace DocumentModel
 
         public void RunEM()
         {
+            RunEM(false);
+        }
+
+        public void RunEM(bool needsSaveDocModel)
+        {
             // init beta                        
             Corpus_Init();
             M_Step(false);
@@ -379,11 +409,16 @@ namespace DocumentModel
                 
                 likelihood_old = likelihood;
                 iter++;                
-            }            
-            E_Step();
+            }
+            E_Step(needsSaveDocModel);
         }
 
         public double E_Step()
+        {
+            return E_Step(false);
+        }
+
+        public double E_Step(bool needsSaveDocModel)
         {
             LDAPostInferAlphaInit();
             double likelihood = 0;
@@ -391,8 +426,13 @@ namespace DocumentModel
             for (int i = 0; i < Count; i++)
             {
                 //((LDABoWModel)this[i]).ReadPhi();
-                double d_likelihood = ((LDABoWModel)this[i]).LDAPostInfer();
+                double d_likelihood = ((LDABoWModel)this[i]).LDAInference();
                 ((LDABoWModel)this[i]).UpdateSuffStat();
+                if (needsSaveDocModel)
+                {
+                    StoreLDADocToDB(((LDABoWModel)this[i]));
+                }
+                ((LDABoWModel)this[i]).ClearMemory();
                 //((LDABoWModel)this[i]).WritePhi();
                 //sw.WriteLine("{0}", d_likelihood);
                 likelihood += d_likelihood;
@@ -497,11 +537,11 @@ namespace DocumentModel
                 }
             }
             sw.Close();
-        }
+        }        
 
-        public void SaveModel(int classKey)
+        public void SaveLDAModel()
         {
-            StreamWriter writer = new StreamWriter(new FileStream("model\\ldamodel_" + classKey + "_" + NumOfTopics+".beta", FileMode.Create));
+            StreamWriter writer = new StreamWriter(new FileStream("model\\ldamodel_" + NumOfTopics + ".beta", FileMode.Create));
             foreach (KeyValuePair<int, double[]> kvp in beta)
             {
                 StringBuilder sb = new StringBuilder();
@@ -517,21 +557,29 @@ namespace DocumentModel
             }
             writer.Close();
 
-            writer = new StreamWriter(new FileStream("model\\ldamodel_" + classKey + "_" + NumOfTopics + ".alpha", FileMode.Create));
+            writer = new StreamWriter(new FileStream("model\\ldamodel_" + NumOfTopics + ".alpha", FileMode.Create));
             writer.WriteLine(alpha);
             writer.Close();
         }
 
-        public void StoreLDA(int classKey, string type)
+        public void StoreLDADocToDB(LDABoWModel doc)
         {
-            MongoCollection<BsonDocument> ldamodel = db.GetCollection<BsonDocument>("ldamodel_"+ type +"_" + classKey + "_" + NumOfTopics);
-            ldamodel.RemoveAll();            
-            for (int i = 0; i < docDB.Count; i++)
-            {
-                BoWModel docModel = ((LDABoWModel)this[i]).GetLDAModel();
-                ldamodel.Insert(docModel.StoreToDB());
-            }            
+            if(ldaColl == null)
+                ldaColl = db.GetCollection<BsonDocument>(LDACollectionName);
+
+            if (ldaColl.Name != LDACollectionName)
+                ldaColl = db.GetCollection<BsonDocument>(LDACollectionName);
+            
+            LDAModel ldaModel = doc.GetLDAModel();
+            ldaColl.Insert(ldaModel.StoreToDB());                
         }
 
+        MongoCollection<BsonDocument> ldaColl;
+
+        public string LDACollectionName
+        {
+            set;
+            get;
+        }
     }
 }

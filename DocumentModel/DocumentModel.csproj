@@ -53,6 +53,7 @@
     <Compile Include="Detachment.cs" />
     <Compile Include="DocModelDictionary.cs" />
     <Compile Include="LDABoWModel.cs" />
+    <Compile Include="LDAModel.cs" />
     <Compile Include="LDAUtil.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -65,6 +66,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="classlabel_stats" />
+    <None Include="doc_set_cls_1000" />
     <None Include="doc_stats" />
     <None Include="noun.exc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

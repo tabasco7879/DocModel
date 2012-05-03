@@ -180,7 +180,7 @@ namespace DocumentModel
             return doc;
         }
 
-        public BoWModel LoadFromDB(BsonDocument doc, WordDictionary wordDict)
+        public BoWModel LoadFromDB(BsonDocument doc, DocModelDictionary wordDict)
         {            
             DocID = doc["DocID"].AsString;
             if (classLabels != null)
