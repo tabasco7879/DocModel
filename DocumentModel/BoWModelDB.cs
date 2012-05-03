@@ -10,7 +10,7 @@ using System.Diagnostics;
 
 namespace DocumentModel
 {
-    abstract class DocModelDB: IDisposable
+    public abstract class DocModelDB: IDisposable
     {
         protected MongoServer server;
         protected MongoDatabase db;
@@ -22,37 +22,10 @@ namespace DocumentModel
         {
             server = MongoServer.Create();
             db = server.GetDatabase(DBName);
-            coll = db.GetCollection<BsonDocument>(CollName);
+            coll = db.GetCollection<BsonDocument>(CollectionName);
             wordDict = wd;
             docDB = new List<DocModel>();           
-        }
-
-        public void LoadFromDBByClass(int classKey, string type)
-        {
-            docDB.Clear();
-            string line;
-            StreamReader reader = new StreamReader(new FileStream(type+"_data//doc_"+ type +"_stats_" + classKey, FileMode.Open));
-            List<BsonValue> ids = new List<BsonValue>();                        
-            while ((line = reader.ReadLine()) != null)
-            {
-                ids.Add(line.Trim());                
-            }
-            reader.Close();
-            var query = Query.In("DocID", ids);
-            foreach (BsonDocument doc in coll.Find(query))
-            {
-                DocModel docModel = LoadFromDB(doc);
-                if (docModel != null)
-                {
-                    docDB.Add(docModel);
-                    if (docDB.Count % 1000 == 0)
-                    {
-                        Console.WriteLine("Loading {0} records", docDB.Count);
-                        //break;
-                    }
-                }
-            }            
-        }
+        }        
 
         public void LoadFromDBByDataSet(string dataSetName)
         {
@@ -104,7 +77,7 @@ namespace DocumentModel
             get;
         }
 
-        public abstract string CollName
+        public abstract string CollectionName
         {
             get;
         }
@@ -149,7 +122,7 @@ namespace DocumentModel
         public abstract void Stats(DocModelDictionary classLabelDict);        
     }
 
-    class BoWModelDB : DocModelDB
+    public class BoWModelDB : DocModelDB
     {
         public BoWModelDB(DocModelDictionary wd)
             : base(wd)
@@ -171,7 +144,7 @@ namespace DocumentModel
             }
         }
 
-        public override string CollName
+        public override string CollectionName
         {
             get
             {

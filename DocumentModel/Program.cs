@@ -81,7 +81,7 @@ namespace DocumentModel
         {
             InitTFIDFDict();
             docModelDB = new LDABoWModelDB(10, tfidfDict);
-            docModelDB.LDACollectionName = "ldaCollection_" + numOfTopics;
+            docModelDB.LDACollectionName = "ldadocs_" + numOfTopics;
             docModelDB.LoadFromDBByDataSet(dataSetName);
             docModelDB.Init();
             docModelDB.RunEM(true);

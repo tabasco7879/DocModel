@@ -9,7 +9,7 @@ using System.Diagnostics;
 
 namespace DocumentModel
 {
-    abstract class DocModelDictionary
+    public abstract class DocModelDictionary
     {
         Dictionary<string, int> dict;
         Dictionary<int, string> inverseDict;

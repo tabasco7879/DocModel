@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace DocumentModel
 {
-    abstract class DocModel
+    public abstract class DocModel
     {
         public abstract int WordCount { get; }
 
