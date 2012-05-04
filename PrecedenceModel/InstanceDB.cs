@@ -36,6 +36,15 @@ namespace PrecedenceModel
         public void LoadInstances()
         {                     
             LoadFromDB();
+            BuildIndex();
+        }
+
+        public int SearchByDocID(string docId)
+        {
+            int idx = -1;
+            if (docIDMap != null)
+                docIDMap.TryGetValue(docId, out idx);
+            return idx;
         }
 
         public override DocModel LoadFromDB(BsonDocument bsonDoc)
@@ -103,8 +112,26 @@ namespace PrecedenceModel
                 vocabulary.Add(i, wordList);                    
             }
         }
-        
+
+        protected void BuildIndex()
+        {
+            if (docIDMap == null)
+            {
+                docIDMap = new Dictionary<string, int>();
+            }
+            else
+            {
+                docIDMap.Clear();
+            }
+
+            for (int i = 0; i < Count; i++)
+            {
+                docIDMap.Add(this[i].DocID, i);
+            }
+        }
+
         Dictionary<int, string[]> vocabulary;
         public static string collectionName;
+        Dictionary<string, int> docIDMap;
     }
 }

@@ -17,7 +17,7 @@ namespace DocumentModel
             //Stats();
             //GenerateTFIDFDictionary();
             //CompileDataSet();
-            int[] listOfTopicNumbers = {100, 80, 50, 30, 20, 10};
+            int[] listOfTopicNumbers = {500};
             for (int i = 0; i < listOfTopicNumbers.Length; i++)
             {
                 LDAEstimateDataSet("doc_set_cls_1000", listOfTopicNumbers[i]);

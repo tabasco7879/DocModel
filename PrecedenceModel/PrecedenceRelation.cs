@@ -82,7 +82,7 @@ namespace PrecedenceModel
             return h;
         }
 
-        public static HashSet<PrecedenceProperty> Convert(HashSet<int> orig)
+        public static HashSet<PrecedenceProperty> Convert(ICollection<int> orig)
         {
             HashSet<PrecedenceProperty> converted = new HashSet<PrecedenceProperty>();
             foreach (int key in orig)
@@ -102,6 +102,37 @@ namespace PrecedenceModel
             return converted;
         }
 
+        public static List<PrecedenceProperty> Convert2(List<int> orig)
+        {
+            List<PrecedenceProperty> converted = new List<PrecedenceProperty>();
+            for(int i=0; i<orig.Count; i++)
+            {
+                for (int j = i + 1; j < orig.Count; j++)
+                {
+                    int[] p = new int[] { orig[i], orig[j] };
+                    converted.Add(new PrecedenceProperty(p));
+                }
+            }
+            return converted;
+        }
+
+        public static List<PrecedenceProperty> Convert3(List<int> orig)
+        {
+            List<PrecedenceProperty> converted = new List<PrecedenceProperty>();
+            for (int i = 0; i < orig.Count; i++)
+            {
+                for (int j = i + 1; j < orig.Count; j++)
+                {
+                    for (int k = j + 1; k < orig.Count; k++)
+                    {
+                        int[] p = new int[] { orig[i], orig[j], orig[k] };
+                        converted.Add(new PrecedenceProperty(p));
+                    }
+                }
+            }
+            return converted;
+        }
+
         public static string ConvertWords(PrecedenceProperty p, DocModelDictionary dictionary)
         {
             StringBuilder sb = new StringBuilder();
@@ -110,8 +141,7 @@ namespace PrecedenceModel
             {
                 int wordKey = p.p[i];
                 sb.Append(" [");
-                sb.Append(dictionary.GetKey(wordKey));
-                sb.Remove(sb.Length - 1, 1);
+                sb.Append(dictionary.GetKey(wordKey));                
                 sb.Append("],");
             }
             sb.Remove(sb.Length - 1, 1);

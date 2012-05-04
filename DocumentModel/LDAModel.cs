@@ -35,7 +35,25 @@ namespace DocumentModel
             {
                 if (wordList == null)
                 {                    
-                    wordList = wordWeights.Keys.ToList();
+                    //wordList = wordWeights.Keys.ToList();
+                    wordList = new List<int>();
+                    List<KeyValuePair<int, double>> weights = wordWeights.ToList();
+                    weights.Sort((x1, x2) =>
+                        {
+                            if (x1.Value > x2.Value)
+                                return -1;
+                            else if (x1.Value == x2.Value)
+                                return 0;
+                            else
+                                return 1;
+                        }
+                    );
+                    for (int i = 0; i < weights.Count; i++)
+                    {
+                        wordList.Add(weights[i].Key);
+                        if (i + 1 > weights.Count * 0.1)
+                            break;
+                    }
                     wordList.Sort();
                 }
                 return wordList;
@@ -169,7 +187,7 @@ namespace DocumentModel
             {
                 if (gamma[i] > 1)
                 {
-                    AddWord(i, gamma[i] - 1 / sum);
+                    AddWord(i, (gamma[i] - 1) / sum);
                 }
             }
         }
