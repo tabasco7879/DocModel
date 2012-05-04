@@ -38,6 +38,7 @@ namespace PrecedenceModel
 
         public void DiscoverPrecedence()
         {
+            precedenceRelations = new List<PrecedenceRelation>();
             for (int i = 0; i < dbs.Count; i++)
             {
                 string precedenceName = "precedence\\precedence_" + dbs[i].Vocabulary.Count;
@@ -272,6 +273,7 @@ namespace PrecedenceModel
                         sb.Append(PrecedenceProperty.ConvertWords(p2, vocabulary));
 
                         writer.WriteLine(sb.ToString());
+                        precedenceRelations.Add(p.Key);
                     }
                 }
                 writer.Close();
@@ -303,6 +305,7 @@ namespace PrecedenceModel
         List<InstanceDB> dbs;
         DocModelDictionary dictionary;
         DocModelDictionary clsDictionary;
+        List<PrecedenceRelation> precedenceRelations;
         int support = 3;
     }
 }
