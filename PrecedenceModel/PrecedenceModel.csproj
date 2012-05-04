@@ -45,8 +45,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PrecedenceInstanceDB.cs" />
+    <Compile Include="InstanceDB.cs" />
     <Compile Include="PrecedenceModel.cs" />
+    <Compile Include="PrecedenceRelation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

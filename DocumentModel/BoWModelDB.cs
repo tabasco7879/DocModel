@@ -45,10 +45,10 @@ namespace DocumentModel
                 if (docModel != null)
                 {
                     docDB.Add(docModel);
-                    if (docDB.Count % 10000 == 0)
+                    if (docDB.Count % 20000 == 0)
                     {
                         Console.WriteLine("Loading {0} records", docDB.Count);
-                        //break;
+                        break;
                     }
                 }
             }

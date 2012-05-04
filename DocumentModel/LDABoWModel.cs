@@ -228,10 +228,7 @@ namespace DocumentModel
             LDAModel ldaModel = new LDAModel();
             ldaModel.DocID = DocID;
             ldaModel.ClassLabels = ClassLabels;
-            for (int i = 0; i < gamma.Length; i++)
-            {
-                ldaModel.AddWord(i, gamma[i]);
-            }
+            ldaModel.Init(gamma);
             return ldaModel;
         }
     }
@@ -258,7 +255,7 @@ namespace DocumentModel
         public LDABoWModelDB(int numOfTopics, DocModelDictionary wd)
             : base(wd)
         {
-            alpha = 0.8;
+            alpha = 0.2;
             NumOfTopics = numOfTopics;
             //Init();
         }

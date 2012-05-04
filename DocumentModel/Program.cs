@@ -17,7 +17,7 @@ namespace DocumentModel
             //Stats();
             //GenerateTFIDFDictionary();
             //CompileDataSet();
-            int[] listOfTopicNumbers = { 10 };
+            int[] listOfTopicNumbers = {100, 80, 50, 30, 20, 10};
             for (int i = 0; i < listOfTopicNumbers.Length; i++)
             {
                 LDAEstimateDataSet("doc_set_cls_1000", listOfTopicNumbers[i]);
@@ -80,12 +80,13 @@ namespace DocumentModel
         static void LDAEstimateDataSet(string dataSetName, int numOfTopics)
         {
             InitTFIDFDict();
-            docModelDB = new LDABoWModelDB(10, tfidfDict);
+            docModelDB = new LDABoWModelDB(numOfTopics, tfidfDict);
             docModelDB.LDACollectionName = "ldadocs_" + numOfTopics;
             docModelDB.LoadFromDBByDataSet(dataSetName);
             docModelDB.Init();
             docModelDB.RunEM(true);
             docModelDB.SaveLDAModel();
+            docModelDB = null;
         }              
 
         static void Stats()

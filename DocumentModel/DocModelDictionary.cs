@@ -225,7 +225,7 @@ namespace DocumentModel
 
     }
 
-    class ClassLabelDictionary : DocModelDictionary
+    public class ClassLabelDictionary : DocModelDictionary
     {
         public override string CollName
         {
@@ -243,7 +243,7 @@ namespace DocumentModel
         }
     }
 
-    class TFIDFDictionary : DocModelDictionary
+    public class TFIDFDictionary : DocModelDictionary
     {
         public override string CollName
         {

@@ -11,7 +11,8 @@ namespace DocumentModel
     public class LDAModel : DocModel
     {
         HashSet<int> classLabels;
-        Dictionary<int, double> wordWeights;        
+        Dictionary<int, double> wordWeights;
+        List<int> wordList;
 
         public override int WordCount
         {
@@ -25,7 +26,20 @@ namespace DocumentModel
 
         public override int Count(int idx)
         {
-            return (int)wordWeights[idx] * wordWeights.Count;
+            return 0;
+        }
+
+        public List<int> WordList
+        {
+            get
+            {
+                if (wordList == null)
+                {                    
+                    wordList = wordWeights.Keys.ToList();
+                    wordList.Sort();
+                }
+                return wordList;
+            }
         }
 
         public override int Word(int idx)
@@ -108,11 +122,8 @@ namespace DocumentModel
                     foreach (BsonElement e in kvp)
                     {
                         int wordKey = int.Parse(e.Name);
-                        if (wordDict.GetKey(wordKey) != null)
-                        {
-                            AddWord(wordKey, e.Value.AsDouble);
-                            if (f) { f = false; } else { Debug.Assert(false); }
-                        }
+                        AddWord(wordKey, e.Value.AsDouble);
+                        if (f) { f = false; } else { Debug.Assert(false); }                        
                     }
                 }
             }
@@ -159,10 +170,6 @@ namespace DocumentModel
                 if (gamma[i] > 1)
                 {
                     AddWord(i, gamma[i] - 1 / sum);
-                }
-                else
-                {
-                    AddWord(i, 0);
                 }
             }
         }
