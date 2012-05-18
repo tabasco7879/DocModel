@@ -141,7 +141,7 @@ namespace DocumentModel
         }
     }
 
-    class WordDictionary : DocModelDictionary
+    public class WordDictionary : DocModelDictionary
     {
 
         HashSet<string> stopwords;

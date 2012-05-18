@@ -17,10 +17,11 @@ namespace DocumentModel
             //Stats();
             //GenerateTFIDFDictionary();
             //CompileDataSet();
-            int[] listOfTopicNumbers = {500};
+            int[] listOfTopicNumbers = {200};
             for (int i = 0; i < listOfTopicNumbers.Length; i++)
             {
                 LDAEstimateDataSet("doc_set_cls_1000", listOfTopicNumbers[i]);
+                //LDAInferenceDataSet("doc_set_cls_1000", listOfTopicNumbers[i]);
             }
         }
 
@@ -87,7 +88,19 @@ namespace DocumentModel
             docModelDB.RunEM(true);
             docModelDB.SaveLDAModel();
             docModelDB = null;
-        }              
+        }
+
+        static void LDAInferenceDataSet(string dataSetName, int numOfTopics)
+        {
+            InitTFIDFDict();
+            docModelDB = new LDABoWModelDB(numOfTopics, tfidfDict);
+            docModelDB.LDACollectionName = "ldadocs_" + numOfTopics+ "_all";
+            docModelDB.LoadFromDBByDataSet(dataSetName);
+            docModelDB.Init();
+            docModelDB.LoadLDAModel();
+            docModelDB.E_Step(true);            
+            docModelDB = null;
+        }
 
         static void Stats()
         {

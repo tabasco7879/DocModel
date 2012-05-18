@@ -6,7 +6,7 @@ using System.IO;
 
 namespace DocumentModel
 {
-    class Detachment
+    public class Detachment
     {
         static Detachment instance;
         Dictionary<string, string> adjException = new Dictionary<string,string>();

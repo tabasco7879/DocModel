@@ -18,11 +18,19 @@ namespace DocumentModel
 
         public abstract int Word(int idx);
 
-        public abstract string DocID { get; set; }        
+        public abstract string DocID { get; set; }
+
+        public abstract HashSet<int> ClassLabels { get; set;}
+
+        public abstract void AddClassLabel(int classLabel);
+
+        public abstract bool HasClassLabel(int classLabel);
+
+        public abstract int this[int key] { get; }
     }
 
     // Bag of word
-    class BoWModel : DocModel
+    public class BoWModel : DocModel
     {
         HashSet<int> classLabels;
         Dictionary<int, int> wordCounts;
@@ -58,7 +66,7 @@ namespace DocumentModel
             }
         }
 
-        public HashSet<int> ClassLabels
+        public override HashSet<int> ClassLabels
         {
             get
             {
@@ -71,7 +79,7 @@ namespace DocumentModel
             }
         }
 
-        public void AddClassLabel(int classLabel)
+        public override void AddClassLabel(int classLabel)
         {
             if (classLabels == null)
             {
@@ -80,7 +88,7 @@ namespace DocumentModel
             classLabels.Add(classLabel);
         }
 
-        public bool HasClassLabel(int classLabel)
+        public override bool HasClassLabel(int classLabel)
         {
             if (classLabels != null)
             {
@@ -114,7 +122,7 @@ namespace DocumentModel
         }
 
         // return word count by word
-        public int this[int key]
+        public override int this[int key]
         {
             get
             {

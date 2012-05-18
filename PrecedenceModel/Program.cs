@@ -16,8 +16,7 @@ namespace PrecedenceModel
             TFIDFDictionary tfidfDict = new TFIDFDictionary();
             tfidfDict.LoadFromDB();
 
-            PrecedenceModel precedenceModel = new PrecedenceModel(tfidfDict, classLabelDict);
-            precedenceModel.LoadInstances();
+            PrecedenceModel precedenceModel = new PrecedenceModel(tfidfDict, classLabelDict);            
             precedenceModel.DiscoverPrecedence();
         }
     }

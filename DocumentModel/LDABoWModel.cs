@@ -163,11 +163,11 @@ namespace DocumentModel
             for (int k = 0; k < modelDB.NumOfTopics; k++)
             {
                 gamma_sum += gamma[k];
-                modelDB.AlphaSuffStats += LDAUtil.digamma(gamma[k]);
-                Debug.Assert(!double.IsNaN(modelDB.AlphaSuffStats));
+                modelDB.AlphaSufficientStatistic += LDAUtil.digamma(gamma[k]);
+                Debug.Assert(!double.IsNaN(modelDB.AlphaSufficientStatistic));
             }
-            modelDB.AlphaSuffStats -= modelDB.NumOfTopics * LDAUtil.digamma(gamma_sum);
-            Debug.Assert(!double.IsNaN(modelDB.AlphaSuffStats));
+            modelDB.AlphaSufficientStatistic -= modelDB.NumOfTopics * LDAUtil.digamma(gamma_sum);
+            Debug.Assert(!double.IsNaN(modelDB.AlphaSufficientStatistic));
         }
 
         public double LDALikelihood(double[] gamma, double[,] phi)
@@ -306,7 +306,7 @@ namespace DocumentModel
             set;
         }
 
-        public void LDAPostInferAlphaInit()
+        public void LDAInferenceAlphaInit()
         {
             sum_log_gamma_alpha = NumOfTopics * LDAUtil.log_gamma(alpha);
             log_gamma_alpha_sum = LDAUtil.log_gamma(NumOfTopics * alpha);
@@ -332,7 +332,7 @@ namespace DocumentModel
             get { return class_total; }
         }
 
-        public double AlphaSuffStats
+        public double AlphaSufficientStatistic
         {
             get { return alpha_suffstats; }
             set { alpha_suffstats = value; }
@@ -356,7 +356,7 @@ namespace DocumentModel
             class_word[w][k] = value;
         }
 
-        public void ZeroSuffStats()
+        public void InitSufficientStatistic()
         {
             alpha_suffstats = 0;
             for (int i = 0; i < NumOfTopics; i++)
@@ -389,7 +389,7 @@ namespace DocumentModel
             int iter = 0;
             while (iter < MAX_ITER && converged > CONVERGENCE)
             {
-                ZeroSuffStats();
+                InitSufficientStatistic();
                 double likelihood = E_Step();
                 
                 M_Step();
@@ -417,7 +417,7 @@ namespace DocumentModel
 
         public double E_Step(bool needsSaveDocModel)
         {
-            LDAPostInferAlphaInit();
+            LDAInferenceAlphaInit();
             double likelihood = 0;
             //StreamWriter sw = new StreamWriter(new FileStream("likelihood.test", FileMode.Create));
             for (int i = 0; i < Count; i++)
@@ -557,6 +557,27 @@ namespace DocumentModel
             writer = new StreamWriter(new FileStream("model\\ldamodel_" + NumOfTopics + ".alpha", FileMode.Create));
             writer.WriteLine(alpha);
             writer.Close();
+        }
+
+        public void LoadLDAModel()
+        {
+            StreamReader reader = new StreamReader(new FileStream("model\\ldamodel_" + NumOfTopics + ".beta", FileMode.Open));
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                string[] s1 = line.Split(':');
+                int key = int.Parse(s1[0]);
+                string[] s2 = s1[1].Split(',');
+                for(int i=0; i<s2.Length; i++)
+                {
+                    beta[key][i] = double.Parse(s2[i]);
+                }
+            }
+            reader.Close();
+
+            reader = new StreamReader(new FileStream("model\\ldamodel_" + NumOfTopics + ".alpha", FileMode.Open));
+            line = reader.ReadLine();
+            alpha = double.Parse(line);
         }
 
         public void StoreLDADocToDB(LDABoWModel doc)

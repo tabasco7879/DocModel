@@ -11,7 +11,7 @@ using System.Diagnostics;
 
 namespace PrecedenceModel
 {
-    class InstanceDB : DocModelDB
+    public class InstanceDB : DocModelDB
     {
 
         public InstanceDB() : base(null)
@@ -131,7 +131,7 @@ namespace PrecedenceModel
         }
 
         Dictionary<int, string[]> vocabulary;
-        public static string collectionName;
+        public static string collectionName;    // TODO: terrible solution
         Dictionary<string, int> docIDMap;
     }
 }

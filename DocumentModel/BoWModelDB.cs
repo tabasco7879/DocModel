@@ -25,10 +25,16 @@ namespace DocumentModel
             coll = db.GetCollection<BsonDocument>(CollectionName);
             wordDict = wd;
             docDB = new List<DocModel>();           
-        }        
+        }
 
         public void LoadFromDBByDataSet(string dataSetName)
         {
+            LoadFromDBByDataSet(dataSetName, 0);
+        }
+
+        public void LoadFromDBByDataSet(string dataSetName, int limit)
+        {
+            Console.Write("Start loading");
             docDB.Clear();
             StreamReader reader = new StreamReader(new FileStream(dataSetName, FileMode.Open));
             List<BsonValue> ids = new List<BsonValue>();
@@ -45,13 +51,17 @@ namespace DocumentModel
                 if (docModel != null)
                 {
                     docDB.Add(docModel);
-                    if (docDB.Count % 20000 == 0)
+                    if (docDB.Count % 1000 == 0)
                     {
-                        Console.WriteLine("Loading {0} records", docDB.Count);
+                        Console.Write(".");                                            
+                    }
+                    if (limit>0 && docDB.Count == limit)
+                    {
                         break;
                     }
                 }
             }
+            Console.WriteLine(" in total {0}", docDB.Count);
         }
 
         public virtual int Count
@@ -69,7 +79,7 @@ namespace DocumentModel
 
         public virtual DocModel this[int idx]
         {
-            get { return docDB != null && docDB.Count > idx ? docDB[idx] : null; }
+            get { return docDB != null && docDB.Count > idx  && idx >=0 ? docDB[idx] : null; }
         }
 
         public abstract string DBName
@@ -97,7 +107,9 @@ namespace DocumentModel
         public abstract DocModel LoadFromDB(BsonDocument bsonDoc);
        
         public virtual void LoadFromDB()
-        {            
+        {
+            Console.Write("Start loading");
+            docDB.Clear();
             MongoCursor<BsonDocument> cursor = coll.FindAll();            
             foreach (BsonDocument doc in cursor)
             {
@@ -105,13 +117,14 @@ namespace DocumentModel
                 if (docModel != null)
                 {
                     docDB.Add(docModel);
-                    if (docDB.Count % 10000 == 0)
+                    if (docDB.Count % 1000 == 0)
                     {
-                        Console.WriteLine("Loading {0} records", docDB.Count);
+                        Console.Write(".");
                         //break;
                     }
                 }                
             }
+            Console.WriteLine(" in total {0}", docDB.Count);
         }
 
         public virtual void AddDocModel(DocModel doc)

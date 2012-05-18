@@ -10,7 +10,7 @@ namespace PrecedenceModel
     delegate ICollection<int> ListProperties(InstanceDB db, int idx);
     delegate List<PrecedenceProperty> BuildProperties(List<int> orig);
 
-    class PrecedenceModel
+    public class PrecedenceModel
     {
         public PrecedenceModel(DocModelDictionary dictionary, DocModelDictionary clsDictionary)
         {
@@ -18,19 +18,19 @@ namespace PrecedenceModel
             this.clsDictionary = clsDictionary;
         }
 
-        public void LoadInstances()
+        void LoadInstances(int limit)
         {
             if (dbs == null)
                 dbs = new List<InstanceDB>();
             else
                 dbs.Clear();
 
-            int[] listOfTopicNumbers = { 100, 80, 50, 30, 20, 10 };
+            int[] listOfTopicNumbers = { 500 };
             for (int i = 0; i < listOfTopicNumbers.Length; i++)
             {
-                InstanceDB.collectionName = "ldadocs_" + listOfTopicNumbers[i];
+                InstanceDB.collectionName = "ldadocs_" + listOfTopicNumbers[i]+ "_all";
                 InstanceDB db = new InstanceDB();
-                db.LoadInstances();
+                db.LoadFromDBByDataSet("doc_set_cls_1000", limit);
                 db.LoadLDAModel("model\\ldamodel_" + listOfTopicNumbers[i] + ".beta", listOfTopicNumbers[i], dictionary);
                 dbs.Add(db);
             }
@@ -38,6 +38,7 @@ namespace PrecedenceModel
 
         public void DiscoverPrecedence()
         {
+            LoadInstances(50000);
             precedenceRelations = new List<PrecedenceRelation>();
             for (int i = 0; i < dbs.Count; i++)
             {
@@ -97,9 +98,11 @@ namespace PrecedenceModel
                     SavePrecendence(precedenceName, precedences, dbs[j].Vocabulary, dbs[i].Vocabulary);
                 }
             }
+
+            dbs.Clear();
         }
 
-        public List<KeyValuePair<PrecedenceRelation, int>> DiscoverPrecedence(InstanceDB db, BuildProperties buildP, ListProperties listP1, ListProperties listP2)
+        List<KeyValuePair<PrecedenceRelation, int>> DiscoverPrecedence(InstanceDB db, BuildProperties buildP, ListProperties listP1, ListProperties listP2)
         {            
             Dictionary<PrecedenceProperty, Dictionary<PrecedenceRelation, int>> good = new Dictionary<PrecedenceProperty, Dictionary<PrecedenceRelation, int>>();
             for (int i = 0; i < db.Count; i++)
@@ -301,6 +304,14 @@ namespace PrecedenceModel
             }
             writer.Close();
         }
+
+        public List<PrecedenceRelation> PrecedenceRelations
+        {
+            get
+            {
+                return precedenceRelations;
+            }
+        }        
 
         List<InstanceDB> dbs;
         DocModelDictionary dictionary;

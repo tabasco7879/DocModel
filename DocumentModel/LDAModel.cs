@@ -71,7 +71,7 @@ namespace DocumentModel
             set;
         }
 
-        public HashSet<int> ClassLabels
+        public override HashSet<int> ClassLabels
         {
             get
             {
@@ -154,7 +154,7 @@ namespace DocumentModel
             return this;
         }
 
-        public void AddClassLabel(int classLabel)
+        public override void AddClassLabel(int classLabel)
         {
             if (classLabels == null)
             {
@@ -189,6 +189,27 @@ namespace DocumentModel
                 {
                     AddWord(i, (gamma[i] - 1) / sum);
                 }
+            }
+        }
+
+        public override bool HasClassLabel(int classLabel)
+        {
+            if (classLabels != null)
+            {
+                return classLabels.Contains(classLabel);
+            }
+            return false;
+        }
+
+        public override int this[int key]
+        {
+            get
+            {
+                if (wordWeights!=null && wordWeights.ContainsKey(key))
+                {
+                    return 1;
+                }
+                return 0;
             }
         }
     }

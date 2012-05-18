@@ -6,7 +6,7 @@ using DocumentModel;
 
 namespace PrecedenceModel
 {
-    class PrecedenceRelation
+    public class PrecedenceRelation
     {
         PrecedenceProperty p1;
         PrecedenceProperty p2;
@@ -44,7 +44,7 @@ namespace PrecedenceModel
         }
     }
 
-    class PrecedenceProperty
+    public class PrecedenceProperty
     {
         int[] p;
 
@@ -72,7 +72,15 @@ namespace PrecedenceModel
                 }                
             }
             return false;
-        }        
+        }
+
+        public int[] Values
+        {
+            get
+            {
+                return p;
+            }
+        }
 
         public override int GetHashCode()
         {

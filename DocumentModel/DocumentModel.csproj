@@ -66,7 +66,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="classlabel_stats" />
-    <None Include="doc_set_cls_1000" />
+    <None Include="doc_set_cls_1000">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="doc_stats" />
     <None Include="noun.exc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
